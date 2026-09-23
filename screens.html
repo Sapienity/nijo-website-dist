@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NijO ✦ - Raise a dreamer, not an influencer.</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Baloo+2:wght@400..700&family=Mulish:wght@400..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "background-warm":            "#FAF6EF",
+            "background-trust":           "#26211C",
+            "surface":                    "#fff8f4",
+            "surface-soft":               "#F2EADD",
+            "surface-container":          "#f6ece5",
+            "surface-container-low":      "#fbf2eb",
+            "surface-dim":                "#e1d8d2",
+            "surface-variant":            "#eae1da",
+            "on-surface":                 "#1f1b17",
+            "on-surface-variant":         "#574239",
+            "text-soft":                  "#6A5F53",
+            "outline":                    "#8a7268",
+            "outline-variant":            "#dec0b5",
+            "primary":                    "#9d3e00",
+            "primary-container":          "#be551b",
+            "on-primary":                 "#ffffff",
+            "secondary":                  "#795902",
+            "secondary-container":        "#fdd275",
+            "tertiary":                   "#9d3e08",
+            "tertiary-container":         "#bd5622",
+            "tertiary-fixed-dim":         "#ffb596",
+            "inverse-primary":            "#ffb694",
+            "tint-pale":                  "#FBEEE0",
+            "tint-warm":                  "#F4DCC6",
+            "terracotta":                 "#D9692E",
+            "terracotta-deep":            "#B5501C",
+            "ink":                        "#221E1A",
+            "gold":                       "#C9A24B",
+            "soft-sage":                  "#DDE3CE",
+            "dusty-rose":                 "#F0DBD7",
+            "warm-honey":                 "#F3DFBC",
+            "soft-terracotta":            "#F4D5C0",
+          },
+          fontFamily: {
+            "fraunces": ["Fraunces", "serif"],
+            "literata": ["Literata", "serif"],
+            "jakarta":  ["Plus Jakarta Sans", "sans-serif"],
+            "mulish":   ["Mulish", "sans-serif"],
+            "baloo":    ["Baloo 2", "cursive"],
+          },
+          spacing: {
+            "margin-desktop":        "80px",
+            "margin-mobile":         "20px",
+            "section-gap-desktop":   "120px",
+            "section-gap-mobile":    "64px",
+            "gutter":                "24px",
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg":      "0.75rem",
+            "xl":      "1rem",
+            "2xl":     "1.5rem",
+            "full":    "9999px",
+          },
+          maxWidth: {
+            "page": "1200px",
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Radial hero glow */
+    .hero-glow {
+      position: absolute;
+      width: 56vw; height: 56vw;
+      background: radial-gradient(circle, rgba(217,105,46,.13) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Sparkle pulse */
+    @keyframes twinkle {
+      0%,100% { opacity: .45; transform: scale(1); }
+      50%      { opacity: 1;   transform: scale(1.15); }
+    }
+    .sparkle { animation: twinkle 3s ease-in-out infinite; color: #C9A24B; }
+
+    /* Audio bars */
+    @keyframes wave {
+      0%,100% { height: 4px; }
+      50%      { height: 18px; }
+    }
+    .audio-bar {
+      width: 3px; background: #D9692E; border-radius: 99px;
+      animation: wave 1.2s ease-in-out infinite;
+    }
+    .audio-bar:nth-child(2) { animation-delay:.2s; }
+    .audio-bar:nth-child(3) { animation-delay:.4s; }
+    .audio-bar:nth-child(4) { animation-delay:.1s; }
+    .audio-bar:nth-child(5) { animation-delay:.5s; }
+    .bars-paused .audio-bar  { animation-play-state: paused; height: 4px !important; }
+
+    /* Bento card hover lift */
+    .bento-card { transition: transform .3s ease, box-shadow .3s ease; }
+    .peek-wrap:hover .bento-card { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+
+    /* Image hidden behind card by default - card's opaque bg acts as mask */
+    .peek-img {
+      transition: translate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .peek-up    { translate: 0 80px; }
+    .peek-right { translate: -60px 0; }
+    .peek-wrap:hover .peek-up    { translate: 0 0; }
+    .peek-wrap:hover .peek-right { translate: 0 0; }
+  </style>
+</head>
+
+<body class="bg-background-warm text-on-surface antialiased">
+
+<!-- ═══════════════════════════════════════════════════════
+     NAVBAR - shared across all screens
+════════════════════════════════════════════════════════ -->
+<header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md border-b border-outline-variant" style="box-shadow:none;">
+  <div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-page mx-auto">
+
+    <!-- Logo -->
+    <a href="/" class="hover:opacity-80 transition-opacity">
+      <img src="../public/logo.png" alt="NijO" class="h-9 w-auto object-contain"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+      <span style="display:none" class="font-fraunces font-semibold text-2xl text-primary italic">NijO</span>
+    </a>
+
+    <!-- Nav links (desktop) -->
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="#why-nijo"      class="text-on-surface font-semibold border-b-2 border-terracotta pb-0.5 text-sm hover:opacity-80 transition-opacity font-jakarta">Why NijO</a>
+      <a href="#weekly-wrap-up" class="text-on-surface-variant text-sm hover:text-primary transition-colors font-jakarta">Weekly letter</a>
+      <a href="#safety"        class="text-on-surface-variant text-sm hover:text-primary transition-colors font-jakarta">Safety</a>
+      <a href="/faq"           class="text-on-surface-variant text-sm hover:text-primary transition-colors font-jakarta">FAQ</a>
+    </nav>
+
+    <!-- CTA row -->
+    <div class="flex items-center gap-6">
+      <a href="/waitlist"
+         class="bg-terracotta hover:bg-terracotta-deep text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-colors active:scale-95 font-jakarta">
+        Join the Waitlist
+      </a>
+    </div>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 1 - HERO  "NijO Hero - Annotated Refinements"
+════════════════════════════════════════════════════════ -->
+<section id="hero" class="relative pt-20 min-h-screen flex items-center bg-background-warm overflow-hidden">
+  <div class="max-w-page mx-auto px-margin-mobile md:px-margin-desktop w-full grid grid-cols-1 lg:grid-cols-12 gap-gutter items-center py-section-gap-mobile md:py-[100px]">
+
+    <!-- Text side -->
+    <div class="lg:col-span-6 flex flex-col text-center lg:text-left space-y-7 z-10">
+
+      <!-- Eyebrow -->
+      <div class="flex items-center justify-center lg:justify-start gap-2">
+        <span class="sparkle select-none">✦</span>
+        <span class="font-jakarta text-xs font-bold uppercase tracking-[0.15em] text-text-soft">Coming soon</span>
+      </div>
+
+      <!-- Headline -->
+      <h1 class="font-fraunces font-semibold text-[2.6rem] md:text-[3.5rem] leading-[1.1] tracking-[-0.02em] text-ink">
+        Raise a <em class="italic">dreamer</em>,<br>not an influencer.
+      </h1>
+
+      <!-- Sub -->
+      <p class="font-jakarta text-lg text-text-soft leading-relaxed max-w-xl mx-auto lg:mx-0">
+        A screen-free companion that listens, talks, and helps your child grow through curiosity and emotional connection - not tech dependence.
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row items-center lg:items-start gap-4 pt-2">
+        <a href="/waitlist"
+           class="bg-terracotta hover:bg-terracotta-deep text-white font-semibold text-base px-10 py-4 rounded-full transition-colors active:scale-95 shadow-sm w-full sm:w-auto text-center font-jakarta">
+          Join the Waitlist
+        </a>
+        <a href="#why-nijo"
+           class="flex items-center gap-2 text-text-soft hover:text-ink transition-colors font-medium text-base group font-jakarta">
+          Meet NijO
+          <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size:20px;">arrow_forward</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Image side -->
+    <div class="lg:col-span-6 relative flex justify-center mt-10 lg:mt-0">
+      <div class="hero-glow"></div>
+      <img src="../public/assets/images/fox.png" alt="NijO plush fox companion"
+           class="relative z-10 w-full max-w-[480px] h-auto object-contain drop-shadow-2xl hover:-translate-y-3 transition-transform duration-700 ease-in-out"
+           onerror="this.src='https://lh3.googleusercontent.com/aida-public/AB6AXuApzSa4iBPOwJLDbHa_-V7OnJd0kk2gqMNL6OZ6ZAQzIu1ytW_KYtlMqQHGSc29S91_BnwjhvvGJ7Mcp2T_xM0Nmpj2wUOUnfLyTwe55t9YxXzQ6H-JYs8pLdWxLClM53Qn8zic7JsJohuuHxyIdefsFDWqyYpPxzOtFlhIZhrUJKojCZ5Ss2qCk6Fx6mn7Hxg12kGN_ydFgg4vhs4z4RCB9MioisxfkPmzFu3hE7KjhyYTr0_6_e-QI1UwRJpvTjTAr1QlbgisF4g'">
+    </div>
+  </div>
+
+  <!-- Bottom sparkle divider -->
+  <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 opacity-40 select-none">
+    <span class="sparkle text-sm">✦</span>
+    <span class="sparkle text-sm" style="animation-delay:.8s;">✦</span>
+    <span class="sparkle text-sm" style="animation-delay:1.6s;">✦</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 2 - PERSONALITY  "Meet NijO - Reoriented Layout"
+════════════════════════════════════════════════════════ -->
+<section id="why-nijo" class="bg-surface py-12 md:py-20 relative">
+  <div class="max-w-page mx-auto px-margin-mobile md:px-margin-desktop">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+
+      <!-- LEFT: sparkle + audio pill only -->
+      <div class="flex flex-col items-center md:items-start gap-8 order-2 md:order-1">
+        <span class="sparkle text-xl select-none">✦</span>
+
+        <button id="nijo-voice-btn"
+                class="group flex items-center gap-4 bg-white border border-outline-variant rounded-full px-6 py-4 shadow-sm hover:border-tint-warm hover:bg-tint-pale transition-all duration-300 cursor-pointer w-fit">
+          <div class="w-9 h-9 rounded-full bg-tint-pale flex items-center justify-center text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors shrink-0">
+            <span class="material-symbols-outlined play-icon" style="font-variation-settings:'FILL' 1; font-size:20px;">play_arrow</span>
+          </div>
+          <span class="font-baloo font-medium text-lg text-ink">Hear NijO say hello</span>
+          <div id="audio-visualizer" class="flex items-end gap-0.5 h-4 ml-1 bars-paused">
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+            <div class="audio-bar"></div>
+          </div>
+        </button>
+      </div>
+
+      <!-- RIGHT: headline + rule + body -->
+      <div class="flex flex-col order-1 md:order-2">
+        <h2 class="font-fraunces font-semibold text-[2.4rem] md:text-[3rem] leading-[1.1] text-ink mb-6 tracking-tight">
+          Not a bot.<br>
+          A best friend<br>
+          <span class="text-text-soft text-[1.8rem] md:text-[2.2rem]">(with a <em class="italic font-bold" style="color:#D9692E;">terrible</em> sense of humour).</span>
+        </h2>
+
+        <div class="h-px w-16 bg-outline-variant mb-6"></div>
+
+        <p class="font-jakarta text-lg text-text-soft leading-relaxed max-w-xl">
+          NijO has moods, curiosity, and genuine personality; no screen, no scrolling, just conversation and imagination. Designed to be a soulful companion for curious minds.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sparkle divider -->
+    <div class="w-full flex justify-center mt-10 opacity-50 select-none">
+      <span class="text-terracotta/40 tracking-[1.2em] text-sm">✦ ✦ ✦</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 3 - BENTO  "What your child becomes"
+════════════════════════════════════════════════════════ -->
+<section id="child-becomes" class="bg-background-warm py-12 md:py-20">
+  <div class="max-w-page mx-auto px-margin-mobile md:px-margin-desktop">
+
+    <!-- Section header -->
+    <header class="mb-10 max-w-2xl">
+      <p class="font-jakarta text-xs font-bold uppercase tracking-[0.15em] text-text-soft mb-4">What your child becomes</p>
+      <h2 class="font-fraunces font-bold text-4xl md:text-5xl text-ink mb-5 leading-tight">
+        The good <em class="italic text-terracotta">influence</em>.
+      </h2>
+      <p class="font-jakarta text-xl text-text-soft leading-relaxed">
+        A companion designed to cultivate emotional intelligence, resilience, and genuine curiosity.
+      </p>
+    </header>
+
+    <!-- 2×2 Bento grid - gap-y-24 reserves space for characters peeking above each card -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 mt-14">
+
+      <!-- Card 1: Endless Curiosity -->
+      <div class="peek-wrap relative">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCATXtL65-RictMqe4KeiBs1yrjZYWhimhJLP2P1XFVpBFDB3TkLm48pwV9qrlDL7fqpabnwHaJoijTDeEK3VYbJZq4Yv_WjRw96OPQHZtnVJKDJkdL9eY27pw7KMZakI7u2PjbTm_u5lrIBIXmSMZgHW62yUnwBIGPqDHzsP7rsY-lRDis8NvoZ_3x4XHT8BJrw9kMh8gLb2JzMVT3WUQDanWg6oIBMPv7HhGG1BCNtgcfTF9KnIZ3cDgzsXWouy5uAFO_lwGVnqE"
+             alt="" class="peek-img peek-up absolute top-0 -translate-y-[78%] right-6 w-44 h-auto object-contain drop-shadow-lg pointer-events-none">
+        <div class="bento-card bg-soft-sage rounded-2xl p-10 relative flex flex-col justify-between min-h-85 border border-white/60">
+          <div class="mt-auto">
+            <h3 class="font-fraunces text-3xl font-semibold mb-3 text-ink">Endless <em class="italic text-terracotta">curiosity</em></h3>
+            <p class="font-jakarta text-base text-text-soft mb-6 leading-relaxed">An infinite-patience question engine that sparks wonder - and never just agrees to please.</p>
+            <div class="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-3 inline-block border border-white/50 shadow-sm">
+              <p class="font-baloo text-lg text-ink">"But why is the sky blue, NijO?"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Better Expression -->
+      <div class="peek-wrap relative">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_d9fU2gkScJCyRhIImHXePO-uEHmvYMCNW7OzBfXibiEr9BYbcIn8n58PqX5EEOQSwxvg9-gNnzS2JUKw6mUcncYER1R2q16w42a6wEfkFxzzURA14zg11u5gp67YQiozyPLlkaT92J0ZTJ7O_r89-MG6lgrr7Jbg87Fq_UzLYJMb9zCnJRrMuS_133aP_QreTDTt9QyqBNcGwVKEZyQZ5wVE4-RT0l46AzJFdf5T3OieuaDwNeVuyttyh95O-WmLAlTtVs9wANE"
+             alt="" class="peek-img peek-right absolute top-4 right-0 translate-x-[90%] w-52 h-auto object-contain drop-shadow-lg pointer-events-none">
+        <div class="bento-card bg-dusty-rose rounded-2xl p-10 relative flex flex-col justify-between min-h-85 border border-white/60">
+          <div class="mt-auto pr-12">
+            <h3 class="font-fraunces text-3xl font-semibold mb-3 text-ink">Better <em class="italic text-terracotta">expression</em></h3>
+            <p class="font-jakarta text-base text-text-soft mb-6 leading-relaxed">NijO helps your child find the words for big feelings - so they come out as sentences, not meltdowns.</p>
+            <div class="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-3 inline-block border border-white/50 shadow-sm">
+              <p class="font-baloo text-lg text-ink">"I felt a bit left out today… can I tell you?"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Emotional Strength -->
+      <div class="peek-wrap relative">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjiDRQGgx7gEAx0u5EIFoIWdsMJn464IOe-fUw6MeVt_IKIKUGynmXKngXQbW2kswzZd5I-PXylziBld3UzrGSUtn3dcfQdeRLJBy3CswRDQOOxiXp2ny1JKLCIkjokA72qRkTejRiO_wsKSEIV1I1oGjGzn9FvSWuHIzj72b0tlBNjXmEPLBGKhxlKxBExREY3JD5D4sjLIXnhs8KZK3A3FceDdYlhjQci-k0Jf10mgEYzOTD4W_wlNxOpejl3bvwRDlu6cxH4Ws"
+             alt="" class="peek-img peek-up absolute top-0 -translate-y-[88%] right-6 w-48 h-auto object-contain drop-shadow-lg pointer-events-none">
+        <div class="bento-card bg-warm-honey rounded-2xl p-10 relative flex flex-col justify-between min-h-85 border border-white/60">
+          <div class="mt-auto">
+            <h3 class="font-fraunces text-3xl font-semibold mb-3 text-ink">Emotional <em class="italic text-terracotta">strength</em></h3>
+            <p class="font-jakarta text-base text-text-soft mb-6 leading-relaxed">Gentle boundaries and a soft 'no' sometimes - because that's how real confidence is built.</p>
+            <div class="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-3 inline-block border border-white/50 shadow-sm">
+              <p class="font-baloo text-lg text-ink">"It's okay. We'll try again tomorrow, together."</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Real-world Connection -->
+      <div class="peek-wrap relative">
+        <img src="img4.png"
+             alt="" class="peek-img peek-right absolute top-4 right-0 translate-x-full w-52 h-auto object-contain drop-shadow-lg pointer-events-none">
+        <div class="bento-card bg-soft-terracotta rounded-2xl p-10 relative flex flex-col justify-between min-h-85 border border-white/60">
+          <div class="mt-auto">
+            <h3 class="font-fraunces text-3xl font-semibold mb-3 text-ink">Real-world <em class="italic text-terracotta">connection</em></h3>
+            <p class="font-jakarta text-base text-text-soft mb-6 leading-relaxed">Every few minutes, NijO nudges your child back toward the people in the room - not deeper into a screen.</p>
+            <div class="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-3 inline-block border border-white/50 shadow-sm">
+              <p class="font-baloo text-lg text-ink">"Go show Mumma - quick, quick!"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom waitlist CTA -->
+    <div class="mt-16 text-center">
+      <a href="/waitlist"
+         class="inline-flex items-center gap-3 bg-terracotta hover:bg-terracotta-deep text-white font-semibold text-base px-10 py-4 rounded-full transition-colors active:scale-95 shadow-md font-jakarta">
+        Be the first to bring NijO home
+        <span class="material-symbols-outlined" style="font-size:20px;">arrow_forward</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════ -->
+<footer class="bg-background-trust text-white/70">
+  <div class="max-w-page mx-auto px-margin-mobile md:px-margin-desktop py-14 flex flex-col md:flex-row justify-between items-center gap-8">
+
+    <span class="font-fraunces text-2xl italic text-white/90">NijO</span>
+
+    <div class="flex flex-wrap justify-center gap-6 text-sm font-jakarta">
+      <a href="#" class="hover:text-white/90 transition-colors">Privacy Policy</a>
+      <a href="#" class="hover:text-white/90 transition-colors">Terms of Service</a>
+      <a href="https://www.instagram.com/thenijostudio/" target="_blank" class="hover:text-white/90 transition-colors">Instagram</a>
+      <a href="/faq"  class="hover:text-white/90 transition-colors">FAQ</a>
+    </div>
+
+    <p class="text-sm font-jakarta opacity-60">© 2024 Neuro Sapiens Private Limited</p>
+  </div>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════ -->
+<script>
+  // Audio visualizer toggle
+  const voiceBtn  = document.getElementById('nijo-voice-btn');
+  const visualizer = document.getElementById('audio-visualizer');
+  const playIcon  = voiceBtn.querySelector('.play-icon');
+  let playing = false, timer;
+
+  voiceBtn.addEventListener('click', () => {
+    playing = !playing;
+    if (playing) {
+      visualizer.classList.remove('bars-paused');
+      playIcon.textContent = 'stop';
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        playing = false;
+        visualizer.classList.add('bars-paused');
+        playIcon.textContent = 'play_arrow';
+      }, 3500);
+    } else {
+      visualizer.classList.add('bars-paused');
+      playIcon.textContent = 'play_arrow';
+      clearTimeout(timer);
+    }
+  });
+</script>
+
+</body>
+</html>
