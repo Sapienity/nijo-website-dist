@@ -1,0 +1,1225 @@
+<title>NijO App Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+
+<style>
+/* ───────────────────────────────────────────────────────────────────────────
+   Page chrome tokens. Theme-aware across all three viewer states.
+   The device interior below is deliberately NOT theme-aware — the app has no
+   dark mode, so inverting it would misrepresent the product.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --stage:      #efe6e1;
+  --stage-edge: #e2d4cc;
+  --ink:        #2a211c;
+  --ink-dim:    #6f5a4e;
+  --rule:       #d9c9c0;
+  --panel:      #fffaf7;
+  --panel-hi:   #ffffff;
+  --accent:     #D35400;
+  --shadow:     rgba(42, 33, 28, .16);
+  --glow:       rgba(211, 84, 0, .13);
+  --glow-soft:  rgba(211, 84, 0, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stage:      #241d19;
+    --stage-edge: #191311;
+    --ink:        #f4eae4;
+    --ink-dim:    #b5a298;
+    --rule:       #3d302a;
+    --panel:      #2d2521;
+    --panel-hi:   #382e29;
+    --accent:     #ff8e4f;
+    --shadow:     rgba(0, 0, 0, .5);
+    --glow:       rgba(255, 142, 79, .17);
+    --glow-soft:  rgba(255, 142, 79, .05);
+  }
+}
+:root[data-theme="dark"] {
+  --stage:      #241d19;
+  --stage-edge: #191311;
+  --ink:        #f4eae4;
+  --ink-dim:    #b5a298;
+  --rule:       #3d302a;
+  --panel:      #2d2521;
+  --panel-hi:   #382e29;
+  --accent:     #ff8e4f;
+  --shadow:     rgba(0, 0, 0, .5);
+  --glow:       rgba(255, 142, 79, .17);
+  --glow-soft:  rgba(255, 142, 79, .05);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--stage);
+  color: var(--ink);
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.stage {
+  display: flex;
+  justify-content: center;
+  padding-inline: 20px;
+  padding-block: 30px 44px;
+}
+
+/* ── Viewport ─────────────────────────────────────────────────────────────── */
+.viewport {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+/* A warm pool of light behind the device, so a lone phone reads as staged
+   rather than stranded. */
+.viewport::before {
+  content: "";
+  position: absolute; z-index: 0;
+  left: 50%; top: 46%; transform: translate(-50%, -50%);
+  width: 132%; aspect-ratio: 1;
+  max-width: 900px;
+  background: radial-gradient(circle, var(--glow) 0%, var(--glow-soft) 42%, transparent 68%);
+  pointer-events: none;
+}
+
+.device {
+  position: relative; z-index: 1;
+  width: 375px; max-width: 100%;
+  height: 760px;
+  background: #100c0a;
+  border-radius: 44px;
+  padding: 11px;
+  box-shadow: 0 30px 60px -18px var(--shadow), 0 0 0 1px rgba(0,0,0,.25);
+  flex-shrink: 0;
+
+  /* The app's own design system — constants/theme.js, verbatim. Fixed on
+     purpose: these must not respond to the viewer's theme. */
+  --p:#D35400; --p-fixed:#ffdbcd; --p-container:#c64f00;
+  --bg:#fff8f5; --s-lowest:#ffffff; --s-low:#fbf2ed; --s:#f5ece7;
+  --s-high:#efe6e2; --s-highest:#e9e1dc; --s-dim:#e1d8d4;
+  --on:#1e1b18; --on-var:#594238;
+  --outline:#8c7166; --outline-var:#e0c0b2;
+  --err:#ba1a1a; --err-c:#ffdad6;
+  --warn:#f2a900; --on-warn:#6b5200;
+  --ok:#2E7D32;
+  --sec:#725c00; --sec-c:#fed652; --on-sec-c:#735d00;
+  --tert:#71582c; --tert-fixed:#ffdeaa;
+  --wrap-accent:#9e3d00;
+  --fh:'Plus Jakarta Sans', system-ui, sans-serif;
+  --fb:'Be Vietnam Pro', system-ui, sans-serif;
+}
+
+.viewport-frame {
+  position: relative; width: 100%; height: 100%;
+  background: var(--bg); border-radius: 34px; overflow: hidden;
+}
+
+.notch {
+  position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+  width: 104px; height: 26px; background: #100c0a; border-radius: 14px; z-index: 40;
+}
+
+.screen {
+  position: absolute; inset: 0;
+  overflow-y: auto; overflow-x: hidden;
+  background: var(--bg);
+  color: var(--on); font-family: var(--fb);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+
+.below { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.hint {
+  margin: 0; display: flex; align-items: center; gap: 8px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 600; font-size: 12.5px; color: var(--ink);
+}
+.hint::before, .hint::after {
+  content: ""; width: 22px; height: 1px; background: var(--rule);
+}
+.caption {
+  margin: 0; font-size: 11px; line-height: 1.6; color: var(--ink-dim);
+  text-align: center; max-width: 42ch;
+}
+
+/* ── Shared in-app primitives ─────────────────────────────────────────────── */
+.safe-top { height: 44px; }
+.spacer-tab { height: 104px; }
+.spacer-40 { height: 40px; }
+
+.screen svg { display: block; flex-shrink: 0; }
+
+.app-btn {
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: inherit; cursor: pointer;
+  display: flex; align-items: center;
+}
+
+/* Stack-screen header (Alerts, Conversations) */
+.hdr {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--outline-var);
+}
+.back-btn {
+  width: 36px; height: 36px; border-radius: 18px;
+  background: var(--s-high);
+  align-items: center; justify-content: center;
+}
+.hdr-title { font-family: var(--fh); font-weight: 700; font-size: 17px; color: var(--on); }
+.hdr-sub { font-size: 12px; color: var(--on-var); margin-top: 1px; }
+
+.list { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+
+.row-card {
+  background: var(--s-low);
+  border-radius: 16px; padding: 16px;
+  display: flex; gap: 14px; align-items: flex-start;
+  box-shadow: 0 1px 4px rgba(30,27,24,.04);
+}
+.badge-28 {
+  width: 28px; height: 28px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.pill-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sev-pill { padding: 2px 8px; border-radius: 999px; }
+.sev-pill span {
+  font-family: var(--fb); font-weight: 600; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.cat {
+  flex: 1; font-weight: 600; font-size: 12px; color: var(--on-var);
+  text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.snippet { font-weight: 500; font-size: 14px; color: var(--on); line-height: 20px; margin-bottom: 8px; }
+.meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.meta span { font-size: 11px; color: var(--on-var); }
+.meta .dot { width: 3px; height: 3px; border-radius: 2px; background: var(--outline); margin: 0 2px; }
+
+/* ── Kid ──────────────────────────────────────────────────────────────────── */
+.setup-banner {
+  display: flex; align-items: center; gap: 12px;
+  margin: 12px 20px 4px;
+  padding: 12px 14px;
+  background: rgba(211,84,0,.08);
+  border: 1px solid rgba(211,84,0,.165);
+  border-radius: 999px;
+}
+.setup-icon {
+  width: 36px; height: 36px; border-radius: 18px; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.setup-body { flex: 1; text-align: left; display: block; }
+.setup-title { font-family: var(--fh); font-weight: 700; font-size: 13px; color: var(--on); }
+.setup-sub { font-size: 11px; color: var(--on-var); margin-top: 2px; }
+.setup-close {
+  width: 24px; height: 24px; border-radius: 12px; background: var(--s-high);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.hero-kid { display: flex; flex-direction: column; align-items: center; padding: 20px 20px 16px; }
+.avatar-ring {
+  width: 100px; height: 100px; border-radius: 50px;
+  background: var(--p); padding: 3px; margin-bottom: 12px;
+  box-shadow: 0 6px 12px rgba(211,84,0,.25);
+}
+.avatar-inner {
+  width: 100%; height: 100%; border-radius: 47px;
+  border: 4px solid var(--bg); background: var(--s);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.avatar-emoji { font-size: 44px; line-height: 1; }
+.kid-name {
+  font-family: var(--fh); font-weight: 700; font-size: 22px;
+  color: var(--on); letter-spacing: -.5px; margin-bottom: 4px;
+}
+.kid-meta { font-weight: 500; font-size: 12px; color: var(--on-var); }
+
+.quick-row { display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+.quick-tile {
+  flex: 1; background: var(--s-low); border-radius: 16px;
+  padding: 16px 8px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid rgba(224,192,178,.1);
+  transition: transform .12s ease;
+}
+.quick-tile:hover { transform: translateY(-1px); }
+.quick-label { font-weight: 600; font-size: 12px; color: var(--on); }
+
+.section { padding: 0 20px; margin-bottom: 20px; }
+.section-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.section-title { font-family: var(--fh); font-weight: 600; font-size: 14px; color: var(--on); }
+.edit-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(211,84,0,.05);
+  padding: 5px 10px; border-radius: 999px;
+}
+.edit-btn span { font-weight: 600; font-size: 11px; color: var(--p); }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 999px;
+  background: var(--s-high); border: 1px solid rgba(224,192,178,.1);
+}
+.tag span { font-weight: 600; font-size: 12px; color: var(--on); }
+.safe-tag { background: rgba(254,214,82,.3); padding: 8px 14px; border: 0; }
+.safe-tag span { color: var(--on-sec-c); }
+
+.add-row { display: flex; gap: 8px; margin-top: 12px; }
+.add-input {
+  flex: 1; min-width: 0;
+  border: 1.5px solid var(--outline-var); border-radius: 999px;
+  padding: 10px 18px; font-family: var(--fb); font-size: 13px;
+  color: var(--on); background: var(--s-lowest);
+}
+.add-input::placeholder { color: var(--outline); }
+.add-btn {
+  width: 46px; height: 46px; border-radius: 23px; background: var(--p);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.protected-card {
+  background: var(--s-lowest); border-radius: 20px; padding: 16px;
+  border: 1px solid rgba(224,192,178,.2);
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 2px 8px rgba(211,84,0,.04);
+}
+.protected-hdr-row { display: flex; justify-content: space-between; align-items: center; }
+.protected-hdr { display: flex; align-items: center; gap: 8px; }
+.protected-title {
+  font-weight: 600; font-size: 11px; color: var(--p);
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.protected-desc { font-size: 13px; color: var(--on-var); line-height: 20px; }
+
+/* ── Parent ───────────────────────────────────────────────────────────────── */
+.p-hero {
+  position: relative; overflow: hidden;
+  background: var(--s-low); border-radius: 18px;
+  margin: 10px 20px 6px; padding: 18px;
+}
+.p-hero::after {
+  content: ""; position: absolute; right: -36px; bottom: -36px;
+  width: 130px; height: 130px; border-radius: 65px;
+  background: var(--p-fixed); opacity: .25;
+}
+.p-hero h2 {
+  position: relative; z-index: 1; margin: 0 0 4px;
+  font-family: var(--fh); font-weight: 700; font-size: 22px;
+  letter-spacing: -.5px; line-height: 28px; color: var(--on);
+}
+.p-hero p { position: relative; z-index: 1; margin: 0; font-weight: 500; font-size: 12px; line-height: 17px; color: var(--on-var); }
+
+.slider-stack { padding: 0 20px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.slider-card {
+  background: var(--s-lowest); border-radius: 999px;
+  padding: 14px 18px 12px; border: 1px solid var(--s);
+  box-shadow: 0 1px 4px rgba(30,27,24,.04);
+}
+.slider-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+.slider-label { font-family: var(--fh); font-weight: 700; font-size: 12px; color: var(--on-var); }
+.slider-pct { font-weight: 600; font-size: 13px; color: var(--p); font-variant-numeric: tabular-nums; }
+.track-wrap { height: 18px; position: relative; margin-bottom: 8px; cursor: pointer; touch-action: none; }
+.track { position: absolute; left: 0; right: 0; top: 5px; height: 8px; border-radius: 999px; background: var(--p-fixed); }
+.fill  { position: absolute; left: 0; top: 5px; height: 8px; border-radius: 999px; background: var(--p); }
+.thumb {
+  position: absolute; top: 0; width: 18px; height: 18px; border-radius: 9px;
+  background: var(--tert); margin-left: -9px; box-shadow: 0 2px 4px rgba(0,0,0,.12);
+}
+.slider-ends { display: flex; justify-content: space-between; padding: 0 4px; }
+.slider-ends span { font-weight: 600; font-size: 9px; color: var(--outline); letter-spacing: .8px; }
+
+.p-section { padding: 0 20px; margin-top: 16px; }
+.p-section > h3 {
+  font-family: var(--fh); font-weight: 700; font-size: 14px;
+  color: var(--on); margin: 0 0 8px 4px;
+}
+.prompt-card { background: var(--s-highest); border-radius: 16px; padding: 14px; }
+.prompt-sublabel {
+  font-weight: 600; font-size: 11px; color: var(--on-var);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px;
+}
+.prompt-text {
+  font-family: var(--fb); font-weight: 500; font-size: 12px;
+  color: var(--on); line-height: 18px; min-height: 54px;
+  width: 100%; border: 0; background: transparent; padding: 0; resize: none;
+}
+.prompt-divider { height: 1px; background: var(--outline-var); margin: 12px 0; }
+.update-wrap { display: flex; justify-content: flex-end; margin-top: 10px; }
+.update-btn {
+  background: var(--p); border-radius: 999px; padding: 9px 20px;
+  box-shadow: 0 3px 8px rgba(211,84,0,.3);
+}
+.update-btn span { color: #fff; font-weight: 600; font-size: 12px; }
+
+.controls { background: var(--s); border-radius: 16px; padding: 2px 6px; }
+.ctrl-row { display: flex; align-items: center; padding: 11px 12px; gap: 10px; }
+.ctrl-icon { width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ctrl-label { font-family: var(--fh); font-weight: 700; font-size: 12px; color: var(--on); }
+.ctrl-sub { font-size: 10px; color: var(--on-var); margin-top: 2px; line-height: 14px; }
+.ctrl-divider { height: 1px; background: var(--outline-var); margin: 0 12px; }
+
+.switch {
+  width: 44px; height: 26px; border-radius: 999px; flex-shrink: 0;
+  background: var(--s-highest); position: relative;
+  transition: background .18s ease;
+}
+.switch[aria-checked="true"] { background: var(--p); }
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 10px; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  transition: transform .18s ease;
+}
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+
+/* ── Settings ─────────────────────────────────────────────────────────────── */
+.set-scroll { padding: 20px; }
+.set-hdr { text-align: center; margin-bottom: 20px; }
+.set-hdr h2 { font-family: var(--fh); font-weight: 700; font-size: 20px; color: var(--on); margin: 0 0 6px; }
+.set-hdr p { font-size: 12px; color: var(--on-var); line-height: 18px; margin: 0; }
+
+.menu {
+  background: var(--s-low); border-radius: 24px; overflow: hidden;
+  margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+.menu-item {
+  display: flex; align-items: center; padding: 16px; width: 100%;
+  border-bottom: 1px solid var(--outline-var); text-align: left;
+}
+.menu-item:last-child { border-bottom: 0; }
+.menu-icon {
+  width: 36px; height: 36px; border-radius: 10px; margin-right: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.menu-text { flex: 1; min-width: 0; }
+.menu-title { font-weight: 600; font-size: 13px; color: var(--on); margin-bottom: 3px; }
+.menu-sub { font-size: 11px; color: var(--on-var); line-height: 15px; }
+
+.about-title {
+  font-weight: 600; font-size: 11px; color: var(--on-var);
+  text-transform: uppercase; letter-spacing: 1.2px; margin: 8px 0 10px 4px;
+}
+.about-card { background: var(--s-low); border-radius: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.about-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--outline-var);
+}
+.about-row:last-child { border-bottom: 0; }
+.about-row .k { font-size: 13px; color: var(--on); }
+.about-row .v { font-size: 13px; color: var(--on-var); font-variant-numeric: tabular-nums; }
+
+/* ── Wrap-up ──────────────────────────────────────────────────────────────── */
+.cover {
+  padding: 0 28px 44px;
+  background: linear-gradient(180deg, var(--p-fixed) 0%, var(--s-low) 58%, var(--bg) 100%);
+}
+.cover-top { display: flex; justify-content: flex-end; align-items: center; padding: 58px 0 14px; }
+.icon-btn-44 {
+  width: 44px; height: 44px; border-radius: 22px;
+  background: rgba(255,255,255,.75);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(30,27,24,.06);
+}
+.eyebrow { font-weight: 600; font-size: 11px; letter-spacing: 1.4px; color: var(--p); margin-bottom: 8px; }
+.cover-title {
+  font-family: var(--fh); font-weight: 800; font-size: 46px; line-height: 50px;
+  letter-spacing: -1px; color: var(--on); margin: 0;
+}
+.cover-title em { font-style: normal; color: var(--p-container); }
+.cover-dates { font-weight: 500; font-size: 14px; color: var(--on-var); margin-top: 10px; }
+
+.hero-card {
+  position: relative; overflow: hidden;
+  margin-top: 26px; background: #fff; border-radius: 28px; padding: 22px;
+  box-shadow: 0 6px 16px rgba(30,27,24,.06);
+}
+.quote-mark {
+  position: absolute; top: -46px; right: 6px;
+  font-family: var(--fh); font-weight: 800; font-size: 110px;
+  color: var(--p-fixed); line-height: 1; pointer-events: none;
+}
+.quote-label {
+  position: relative; font-weight: 600; font-size: 11px; letter-spacing: 1.4px;
+  color: var(--on-var); margin-bottom: 10px;
+}
+.quote-text {
+  position: relative; font-family: var(--fh); font-weight: 600;
+  font-size: 19px; line-height: 27px; color: var(--on); letter-spacing: -.2px;
+}
+
+.w-section { padding: 32px 28px; }
+.numbers-section { background: var(--s); border-radius: 40px 40px 0 0; }
+.curio-section { background: var(--s-low); }
+.w-title {
+  font-family: var(--fh); font-weight: 800; font-size: 24px;
+  letter-spacing: -.5px; color: var(--on); margin: 0 0 20px;
+}
+.w-title em { font-style: normal; color: var(--wrap-accent); }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-card { background: var(--s-lowest); border-radius: 20px; padding: 16px 14px; }
+.stat-n {
+  font-family: var(--fh); font-weight: 800; font-size: 30px; line-height: 1;
+  color: var(--p); letter-spacing: -1px; font-variant-numeric: tabular-nums;
+}
+.stat-k { font-size: 11.5px; line-height: 16px; color: var(--on-var); margin-top: 7px; }
+
+.grow-card { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+.grow-dot { width: 7px; height: 7px; border-radius: 4px; background: var(--p); margin-top: 7px; flex-shrink: 0; }
+.grow-text { font-size: 14.5px; line-height: 23px; color: var(--on); }
+
+.calm-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: #F0FDF4; border-radius: 18px; padding: 16px;
+}
+.calm-text { font-size: 14px; line-height: 21px; color: var(--on); }
+.flag-card { background: rgba(242,169,0,.1); border-radius: 18px; padding: 16px; }
+.flag-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.flag-cat { flex: 1; font-weight: 600; font-size: 13px; color: var(--on-warn); text-transform: capitalize; }
+.flag-pill { background: rgba(242,169,0,.25); border-radius: 999px; padding: 2px 9px; }
+.flag-pill span { font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--on-warn); }
+.flag-body { font-size: 14px; line-height: 21px; color: var(--on); }
+
+.ask-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--s-lowest); border-radius: 18px; padding: 16px; margin-bottom: 10px;
+  border: 1px solid rgba(224,192,178,.3);
+}
+.ask-text { font-size: 14.5px; line-height: 22px; color: var(--on); }
+.ask-hint { font-size: 12px; line-height: 18px; color: var(--on-var); margin-top: 14px; }
+
+.closing { text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+.closing-line {
+  font-family: var(--fh); font-weight: 600; font-size: 16px;
+  line-height: 25px; color: var(--on-var); text-wrap: balance;
+}
+.quiet-link { font-weight: 600; font-size: 13px; color: var(--p); }
+
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; justify-content: center;
+  padding: 8px 20px 20px;
+  pointer-events: none;
+}
+.tabbar-inner {
+  display: flex; gap: 4px; pointer-events: auto;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  border-radius: 999px; padding: 8px;
+  box-shadow: 0 -4px 20px rgba(30,27,24,.1), 0 2px 8px rgba(30,27,24,.06);
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 14px; border-radius: 999px;
+  color: #8c7166;
+  transition: background .18s ease, transform .18s ease, color .18s ease;
+}
+.tab-btn span { font-weight: 500; font-size: 10px; }
+.tab-btn[aria-current="true"] {
+  background: rgba(211,84,0,.082);
+  color: var(--p);
+  transform: scale(1.05);
+}
+.tab-btn[aria-current="true"] span { font-weight: 600; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .stage { padding-block: 24px 36px; }
+  .device { height: 700px; }
+}
+
+@media (max-width: 420px) {
+  .stage { padding-block: 18px 28px; }
+  .device { height: 640px; border-radius: 38px; padding: 8px; }
+  .viewport-frame { border-radius: 30px; }
+  .cover-title { font-size: 38px; line-height: 42px; }
+  .hint::before, .hint::after { width: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::after { transition: none !important; animation: none !important; }
+  .quick-tile:hover, .tab-btn[aria-current="true"] { transform: none; }
+}
+</style>
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     SITE EMBED OVERRIDES — added by nijo-website when this snapshot was copied
+     from nijo_app/prototype/index.html. The prototype stages itself as a phone
+     on a dark backdrop; embedded in /app-demo it should read as the app screen
+     sitting on the page, so the stage colour, glow pool, bezel and notch come
+     off. RE-APPLY THIS BLOCK if the snapshot is refreshed from the app repo.
+────────────────────────────────────────────────────────────────────────── -->
+<style>
+  html, body { height: 100%; background: transparent; }
+
+  /* The host page is light-only (cream ground). The prototype's own dark-mode
+     token block would flip --ink/--ink-dim/--rule to near-white for viewers
+     with a dark OS theme, leaving the hint and caption invisible on the cream.
+     Pin the light values regardless of theme; this comes after the prototype's
+     own rules so it wins. */
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    color-scheme: light;
+    --ink:      #2a211c;
+    --ink-dim:  #6f5a4e;
+    --rule:     #d9c9c0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --ink: #2a211c; --ink-dim: #6f5a4e; --rule: #d9c9c0; }
+  }
+
+  /* stage: the brown backdrop and its padding */
+  .stage { padding: 0; height: 100%; }
+
+  /* the warm pool of light staged behind the device */
+  .viewport::before { display: none; }
+
+  .viewport { width: 100%; height: 100%; gap: 30px; }
+
+  /* The handset overlay - bezel, rounded shell, notch and drop shadow - is the
+     prototype's own styling, left intact. Only the staging around it (backdrop
+     colour, glow pool, padding) is stripped, so the phone reads as sitting on
+     the page rather than on its own dark set.
+     It keeps its designed 375x760 viewport: shrinking the box just clipped the
+     app and pushed the rest into an internal scroll. The script below zooms it
+     to fit instead, so the whole screen shows at any height. */
+  .device {
+    flex: 0 0 auto;
+    width: 375px;
+    height: 760px;
+    max-width: none;
+  }
+
+  /* the status bar sits under where the notch was - reclaim that space */
+  .screen { padding-top: 0; }
+</style>
+
+<script>
+  /* Scale the device so its whole 760px viewport fits the frame it is embedded
+     in. `zoom` rather than `transform: scale()` because zoom affects layout -
+     a transform leaves the original 760px box behind and the caption below it
+     ends up floating over empty space. CSS alone cannot do this: deriving a
+     unitless ratio from two lengths is not expressible in calc(). */
+  (function () {
+    var DEVICE_W = 375, DEVICE_H = 760, MAX_ZOOM = 1.35;
+    function fit() {
+      var device = document.querySelector('.device');
+      var below = document.querySelector('.below');
+      if (!device) return;
+      device.style.zoom = '';                      // measure unscaled
+      var reserved = below ? below.offsetHeight + 38 : 0;
+      // MAX_ZOOM > 1 so the handset can grow past its native 375x760 when the
+      // frame allows. Height and width still cap it, so it can never overflow
+      // the column it is embedded in.
+      var scale = Math.min(
+        MAX_ZOOM,
+        (window.innerHeight - reserved) / DEVICE_H,
+        window.innerWidth / DEVICE_W
+      );
+      device.style.zoom = scale > 0 ? String(scale) : '1';
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit);
+  })();
+</script>
+
+
+<div class="stage">
+  <main class="viewport">
+    <div class="device">
+      <div class="viewport-frame">
+        <div class="notch" aria-hidden="true"></div>
+        <div class="screen" id="screen" tabindex="-1"></div>
+        <div class="tabbar" id="tabbar" hidden>
+          <div class="tabbar-inner" id="tabbar-inner" role="tablist" aria-label="Main tabs"></div>
+        </div>
+      </div>
+    </div>
+    <div class="below">
+      <p class="hint">Tap around — everything works</p>
+      <p class="caption">A sample family. The names, quotes and figures on these screens are illustrative.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Icons ───────────────────────────────────────────────────────────────
+     Hand-drawn approximations of the Ionicons / MaterialIcons glyphs each
+     screen uses. @expo/vector-icons can't load under the artifact CSP. */
+  var P = {
+    happy:    '<circle cx="12" cy="12" r="9"/><path d="M8.2 14.2s1.3 2.1 3.8 2.1 3.8-2.1 3.8-2.1"/><path d="M9 10.2h.01"/><path d="M15 10.2h.01"/>',
+    people:   '<circle cx="9.5" cy="7.8" r="3.2"/><path d="M3.5 19.2c0-3.1 2.7-5.2 6-5.2s6 2.1 6 5.2"/><path d="M16 5.2a3 3 0 0 1 0 5.4"/><path d="M17.5 14.6c1.9.6 3.2 2.2 3.2 4.6"/>',
+    gear:     '<circle cx="12" cy="12" r="3.1"/><path d="M19.2 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 0 1-3.8 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1h-.2a1.9 1.9 0 0 1 0-3.8h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5v-.2a1.9 1.9 0 1 1 3.8 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 0 1 0 3.8h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+    chats:    '<path d="M8 13.2H5.6A1.6 1.6 0 0 1 4 11.6V5.4a1.6 1.6 0 0 1 1.6-1.6h8.8A1.6 1.6 0 0 1 16 5.4V7.6"/><path d="M9.6 7.8h8.8A1.6 1.6 0 0 1 20 9.4v6.2a1.6 1.6 0 0 1-1.6 1.6h-4.2L10 20.6v-3.4h-.4A1.6 1.6 0 0 1 8 15.6V9.4a1.6 1.6 0 0 1 1.6-1.6z"/>',
+    shield:   '<path d="M12 3.2l7 3v5.4c0 4.3-2.9 7.6-7 8.5-4.1-.9-7-4.2-7-8.5V6.2z"/><path d="M9 12.1l2.1 2.1L15.2 10"/>',
+    mail:     '<path d="M4 10.4L12 4.8l8 5.6v8.2a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 18.6z"/><path d="M4 10.4l8 5.6 8-5.6"/>',
+    pencil:   '<path d="M4 20h4L18.2 9.8a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.6 6.4l3 3"/>',
+    check:    '<path d="M5 12.6l4.6 4.6L19 7"/>',
+    plus:     '<path d="M12 5.2v13.6M5.2 12h13.6"/>',
+    shieldFill:'<path d="M12 2.4l8 3.4v5.9C20 17 16.6 21.1 12 22 7.4 21.1 4 17 4 11.7V5.8z" fill="currentColor" stroke="none"/>',
+    chevL:    '<path d="M15 4.8l-7 7.2 7 7.2"/>',
+    chevR:    '<path d="M9 4.8l7 7.2-7 7.2"/>',
+    warn:     '<path d="M12 3.6L21.4 20H2.6z"/><path d="M12 9.6v4.4"/><path d="M12 16.9h.01"/>',
+    cal:      '<rect x="4" y="5.4" width="16" height="15" rx="2.4"/><path d="M8 3.2v4M16 3.2v4M4 10.2h16"/>',
+    clock:    '<circle cx="12" cy="12" r="8.8"/><path d="M12 7v5.2l3.2 2"/>',
+    trash:    '<path d="M4.2 7h15.6"/><path d="M9.2 7V5.2a1.1 1.1 0 0 1 1.1-1.1h3.4a1.1 1.1 0 0 1 1.1 1.1V7"/><path d="M6.2 7l.9 12.4a1.6 1.6 0 0 0 1.6 1.5h6.6a1.6 1.6 0 0 0 1.6-1.5L17.8 7"/>',
+    bubble:   '<path d="M20 11.6a7.8 7.8 0 0 1-11.3 7L4.4 20l1.3-4.3A7.8 7.8 0 1 1 20 11.6z"/>',
+    bubbleDots:'<path d="M20 11.4a7.7 7.7 0 0 1-11.2 6.9L4.5 19.6l1.3-4.3A7.7 7.7 0 1 1 20 11.4z"/><path d="M9 11.5h.01M12 11.5h.01M15 11.5h.01"/>',
+    person:   '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2c0-3.4 3.2-5.6 7.2-5.6s7.2 2.2 7.2 5.6"/>',
+    wifi:     '<path d="M2.4 8.8a15.2 15.2 0 0 1 19.2 0"/><path d="M5.8 12.4a10.2 10.2 0 0 1 12.4 0"/><path d="M9.1 15.9a5.2 5.2 0 0 1 5.8 0"/><path d="M12 19.4h.01"/>',
+    lock:     '<rect x="4.4" y="10" width="15.2" height="10.6" rx="2.6"/><path d="M7.9 10V7.6a4.1 4.1 0 0 1 8.2 0V10"/>',
+    help:     '<circle cx="12" cy="12" r="8.8"/><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.8c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17.4h.01"/>',
+    alertCir: '<circle cx="12" cy="12" r="8.8"/><path d="M12 7.4v5.2"/><path d="M12 16.4h.01"/>',
+    albums:   '<rect x="3.2" y="7" width="17.6" height="13.4" rx="2.6"/><path d="M6.4 4.2h11.2"/>',
+    bell:     '<path d="M18 9.4a6 6 0 1 0-12 0c0 4.9-2 6.4-2 6.4h16s-2-1.5-2-6.4z"/><path d="M10.1 19a2.1 2.1 0 0 0 3.8 0"/>',
+    rocket:   '<path d="M12 3c3.4 2.1 5.3 5.5 5.3 9.4L14 15.8h-4L6.7 12.4C6.7 8.5 8.6 5.1 12 3z"/><circle cx="12" cy="9.8" r="1.7"/><path d="M9.2 16.4c-1.5.8-2.1 2.3-2.1 4.5 2.2 0 3.7-.6 4.5-2.1M14.8 16.4c1.5.8 2.1 2.3 2.1 4.5-2.2 0-3.7-.6-4.5-2.1"/>',
+    close:    '<path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"/>'
+  };
+
+  function icon(name, size, color, sw) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="' + color + '" stroke-width="' + (sw || 1.9) + '" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[name] + '</svg>';
+  }
+
+  /* ── Fixture data ────────────────────────────────────────────────────────
+     A sample family. Wrap-up copy follows constants/wrapupCopy.ts voice rules:
+     observe, don't diagnose. */
+  var DATA = {
+    kid: { name: 'Aarav', age: 6, avatar: '🦊' },
+
+    alerts: [
+      { id: 3, severity: 'high', category: 'scary content',
+        snippet: 'Asked what happens if nobody comes to pick him up from school, and whether that happens to other kids.',
+        at: '2026-09-18T19:42:00' },
+      { id: 2, severity: 'medium', category: 'fear of the dark',
+        snippet: "Said he doesn't want to sleep in his room because of a noise behind the cupboard.",
+        at: '2026-09-16T20:15:00' },
+      { id: 1, severity: 'low', category: 'friendship',
+        snippet: 'Mentioned a classmate not letting him join a game at break.',
+        at: '2026-09-14T17:05:00' }
+    ],
+
+    conversations: [
+      { id: 4, summary: 'Built a story about a fox astronaut who was scared of the dark and went anyway.', at: '2026-09-18T19:30:00', turns: 24 },
+      { id: 3, summary: "Asked why the dinosaurs didn't see the asteroid coming, and why we can.", at: '2026-09-17T18:12:00', turns: 31 },
+      { id: 2, summary: 'Practised counting to fifty in Hindi and got stuck at thirty-nine.', at: '2026-09-16T17:45:00', turns: 12 },
+      { id: 1, summary: 'Wanted to know whether drawing counts as work or as play.', at: '2026-09-14T16:20:00', turns: 18 }
+    ],
+
+    wrapup: {
+      kid_name: 'Aarav',
+      week_start: '2026-09-13',
+      hero: { type: 'quote', text: 'If the dinosaurs had telescopes, would they have seen us coming?' },
+      // `seconds` is the stored unit; the screen derives minutes. Kept here so
+      // the prototype does the same arithmetic the real screen does.
+      numbers: { sessions: 9, seconds: 4430, questions: 41, why_questions: 12, days_together: 5, mentions_of_parent: 3 },
+      growing: [
+        'He started finishing his own thoughts before asking the next one — three times this week he paused, then added a “because…” without being asked.',
+        'He began asking what other people in a story wanted, not only what happened next.'
+      ],
+      attention: { flag: true, category: 'fear of the dark', severity: 'medium' },
+      bring_it_up: [
+        'What do you think the dinosaurs would have been scared of?',
+        'You told Nijo about the noise at night. Want to tell me about it too?',
+        'If you could name a new planet, what would you call it?'
+      ],
+      sign_off: 'He is asking bigger questions than he was a month ago.'
+    }
+  };
+
+  /* Labels, verbatim from constants/wrapupCopy.ts */
+  var C = {
+    eyebrow: 'YOUR WEEKLY LETTER',
+    titleSuffix: 'Week',
+    hero: { quote: 'WORTH KEEPING', growth: 'A MOMENT THIS WEEK', topic: 'WHAT THEY WERE INTO' },
+    numbers: {
+      eyebrow: 'BY THE NUMBERS', title: 'A week, ', titleAccent: 'in figures',
+      labels: {
+        sessions: { one: 'conversation', many: 'conversations' },
+        minutes: { one: 'minute together', many: 'minutes together' },
+        questions: { one: 'question asked', many: 'questions asked' },
+        why_questions: { one: 'was a "why?" question', many: 'were "why?" questions' },
+        days_together: { one: 'day with Nijo', many: 'days with Nijo' },
+        mentions_of_parent: { one: 'time you came up', many: 'times you came up' }
+      }
+    },
+    growing: { eyebrow: "WHAT'S GROWING", title: 'What we ', titleAccent: 'noticed' },
+    attention: {
+      eyebrow: 'WORTH YOUR ATTENTION', title: 'One thing ', titleAccent: 'to know',
+      clearTitle: 'Nothing ', clearTitleAccent: 'to flag',
+      flagged: 'Nijo noticed this come up more than once. It might be worth a gentle ask.'
+    },
+    bringItUp: { eyebrow: 'BRING IT UP', title: 'Things to ', titleAccent: 'ask about', hint: 'Openers, not scripts — say them however you say things.' },
+    conversationsLink: 'See all conversations'
+  };
+
+  var NUMBER_ORDER = ['sessions', 'minutes', 'questions', 'why_questions', 'days_together', 'mentions_of_parent'];
+
+  /* ── Mutable UI state ────────────────────────────────────────────────────── */
+  var S = {
+    screen: 'kid',
+    tab: 'kid',
+    bannerDismissed: false,
+    interests: ['Dinosaurs', 'Space', 'Drawing', 'Cricket'],
+    topics: ['Violence', 'Scary stories', 'Strangers'],
+    editingInterests: false,
+    editingTopics: false,
+    sliders: { humour: 0.6, energy: 0.45, curiosity: 0.85 },
+    toggles: { save_conversations: true, family_mode: false, restricted_alerts: true, auto_delete: true },
+    alerts: DATA.alerts.slice()
+  };
+
+  var TABS = [
+    { id: 'kid', label: 'Kid', icon: 'happy' },
+    { id: 'parent', label: 'Parent', icon: 'people' },
+    { id: 'settings', label: 'Settings', icon: 'gear' }
+  ];
+
+  /* ── Helpers ─────────────────────────────────────────────────────────────── */
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  function fmtTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  function sevRaw(s) {
+    return s === 'high' ? '#ba1a1a' : s === 'medium' ? '#f2a900' : '#594238';
+  }
+  function sevTextColor(s) {
+    return s === 'high' ? 'var(--err)' : s === 'medium' ? 'var(--on-warn)' : 'var(--on-var)';
+  }
+  function sevTint(s) {
+    return s === 'high' ? 'rgba(186,26,26,.1)' : s === 'medium' ? 'rgba(242,169,0,.1)' : 'rgba(89,66,56,.1)';
+  }
+  function metaRow(iso, extra) {
+    var h = '<div class="meta">' +
+      icon('cal', 11, '#594238', 1.7) + '<span>' + esc(fmtDate(iso)) + '</span>' +
+      '<div class="dot"></div>' +
+      icon('clock', 11, '#594238', 1.7) + '<span>' + esc(fmtTime(iso)) + '</span>';
+    if (extra != null) {
+      h += '<div class="dot"></div>' + icon('bubble', 11, '#594238', 1.7) + '<span>' + esc(extra) + '</span>';
+    }
+    return h + '</div>';
+  }
+  function possessive(n) { return /s$/i.test(n) ? n + "'" : n + "'s"; }
+  function weekRange(ws) {
+    var a = new Date(ws + 'T00:00:00');
+    var b = new Date(a); b.setDate(a.getDate() + 6);
+    var f = function (d) { return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }); };
+    return f(a) + ' – ' + f(b);
+  }
+
+  /* ── Screens ─────────────────────────────────────────────────────────────── */
+
+  function kidScreen() {
+    var k = DATA.kid;
+    var h = '<div class="safe-top"></div>';
+
+    if (!S.bannerDismissed) {
+      h += '<div class="setup-banner">' +
+        '<div class="setup-icon">' + icon('rocket', 20, '#D35400') + '</div>' +
+        '<button class="app-btn setup-body" data-act="noop">' +
+          '<span><span class="setup-title">Finish setting up NijO</span>' +
+          '<span class="setup-sub" style="display:block">Connect your NijO to WiFi</span></span>' +
+        '</button>' +
+        '<button class="app-btn setup-close" data-act="dismiss-banner" aria-label="Dismiss setup reminder">' +
+          icon('close', 14, '#594238', 2.2) + '</button>' +
+      '</div>';
+    }
+
+    h += '<div class="hero-kid">' +
+      '<div class="avatar-ring"><div class="avatar-inner"><span class="avatar-emoji">' + k.avatar + '</span></div></div>' +
+      '<div class="kid-name">' + esc(k.name) + '</div>' +
+      '<div class="kid-meta">' + k.age + ' years old</div>' +
+    '</div>';
+
+    h += '<div class="quick-row">' +
+      '<button class="app-btn quick-tile" data-act="go" data-to="conversations">' + icon('chats', 22, '#D35400') + '<span class="quick-label">Chats</span></button>' +
+      '<button class="app-btn quick-tile" data-act="go" data-to="alerts">' + icon('shield', 22, '#D35400') + '<span class="quick-label">Alerts</span></button>' +
+      '<button class="app-btn quick-tile" data-act="go" data-to="wrapup">' + icon('mail', 22, '#D35400') + '<span class="quick-label">Wrap-up</span></button>' +
+    '</div>';
+
+    // Interests
+    h += '<div class="section"><div class="section-hdr">' +
+      '<div class="section-title">Interests</div>' +
+      '<button class="app-btn edit-btn" data-act="toggle-edit" data-which="interests">' +
+        icon(S.editingInterests ? 'check' : 'pencil', 12, '#D35400', 2.2) +
+        '<span>' + (S.editingInterests ? 'Done' : 'Edit') + '</span></button>' +
+    '</div><div class="tag-row">';
+    S.interests.forEach(function (t) {
+      h += '<div class="tag"><span>' + esc(t) + '</span>' +
+        (S.editingInterests ? '<button class="app-btn" data-act="del-interest" data-val="' + esc(t) + '" aria-label="Remove ' + esc(t) + '">' + icon('close', 12, '#594238', 2.4) + '</button>' : '') +
+      '</div>';
+    });
+    h += '</div>';
+    if (S.editingInterests) {
+      h += '<div class="add-row"><input class="add-input" id="add-interest" placeholder="Add an interest…" aria-label="New interest name">' +
+        '<button class="app-btn add-btn" data-act="add-interest" aria-label="Add interest">' + icon('plus', 20, '#ffffff', 2.2) + '</button></div>';
+    }
+    h += '</div>';
+
+    // Protected topics
+    h += '<div class="section"><div class="protected-card">' +
+      '<div class="protected-hdr-row"><div class="protected-hdr">' +
+        '<span style="color:#D35400;display:flex">' + icon('shieldFill', 16, 'none', 0) + '</span>' +
+        '<span class="protected-title">Protected Topics</span></div>' +
+      '<button class="app-btn edit-btn" data-act="toggle-edit" data-which="topics">' +
+        icon(S.editingTopics ? 'check' : 'pencil', 12, '#D35400', 2.2) +
+        '<span>' + (S.editingTopics ? 'Done' : 'Edit') + '</span></button></div>' +
+      '<div class="protected-desc">nijo filters these topics to ensure conversations remain age-appropriate and emotionally safe.</div>' +
+      '<div class="tag-row">';
+    S.topics.forEach(function (t) {
+      h += '<div class="tag safe-tag"><span>' + esc(t) + '</span>' +
+        (S.editingTopics ? '<button class="app-btn" data-act="del-topic" data-val="' + esc(t) + '" aria-label="Remove ' + esc(t) + '">' + icon('close', 12, '#735d00', 2.4) + '</button>' : '') +
+      '</div>';
+    });
+    h += '</div>';
+    if (S.editingTopics) {
+      h += '<div class="add-row" style="margin-top:12px"><input class="add-input" id="add-topic" placeholder="Add a protected topic…" aria-label="New protected topic">' +
+        '<button class="app-btn add-btn" data-act="add-topic" aria-label="Add protected topic">' + icon('plus', 20, '#ffffff', 2.2) + '</button></div>';
+    }
+    h += '</div></div><div class="spacer-tab"></div>';
+    return h;
+  }
+
+  function sliderCard(key, label, left, right) {
+    var pct = Math.round(S.sliders[key] * 100);
+    return '<div class="slider-card">' +
+      '<div class="slider-top"><span class="slider-label">' + label + '</span><span class="slider-pct">' + pct + '%</span></div>' +
+      '<div class="track-wrap" data-slider="' + key + '" role="slider" tabindex="0" aria-label="' + label + '" ' +
+        'aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '">' +
+        '<div class="track"></div><div class="fill" style="width:' + pct + '%"></div><div class="thumb" style="left:' + pct + '%"></div>' +
+      '</div>' +
+      '<div class="slider-ends"><span>' + left + '</span><span>' + right + '</span></div>' +
+    '</div>';
+  }
+
+  function parentScreen() {
+    var toggles = [
+      { k: 'save_conversations', icon: 'albums', bg: '#ffdbcd', fg: '#D35400', label: 'Save Conversations', sub: 'Store logs for weekly review' },
+      { k: 'family_mode', icon: 'people', bg: '#fed652', fg: '#725c00', label: 'Family Mode', sub: 'Optimizes responses for group play' },
+      { k: 'restricted_alerts', icon: 'bell', bg: '#ffdeaa', fg: '#71582c', label: 'High-priority alerts only', sub: 'When off, also notify me about other flagged topics' },
+      { k: 'auto_delete', icon: 'trash', bg: '#ffdad6', fg: '#ba1a1a', label: 'Auto-delete Transcripts', sub: 'Clear conversations older than 30 days' }
+    ];
+
+    var h = '<div class="safe-top"></div>' +
+      '<div class="p-hero"><h2>NijO Personality</h2><p>Fine-tune how NijO interacts with your child.</p></div>' +
+      '<div class="slider-stack">' +
+        sliderCard('humour', 'Humour', 'SERIOUS', 'FUNNY') +
+        sliderCard('energy', 'Energy', 'SLEEPY', 'ACTIVE') +
+        sliderCard('curiosity', 'Curiosity', 'FACTUAL', 'CURIOUS') +
+      '</div>';
+
+    h += '<div class="p-section"><h3>Parent Prompt</h3><div class="prompt-card">' +
+      '<div class="prompt-sublabel">What to do</div>' +
+      '<textarea class="prompt-text" id="prompt-do" aria-label="What NijO should do">Always encourage good manners and kindness. Nudge him to try the word in Hindi first if he knows it.</textarea>' +
+      '<div class="prompt-divider"></div>' +
+      '<div class="prompt-sublabel">What not to do</div>' +
+      '<textarea class="prompt-text" id="prompt-dont" aria-label="What NijO should not do">Avoid scary topics or violence. Don\'t answer questions about what happens after people die.</textarea>' +
+      '</div><div class="update-wrap"><button class="app-btn update-btn" data-act="noop"><span>Update Prompt</span></button></div></div>';
+
+    h += '<div class="p-section"><h3>Controls</h3><div class="controls">';
+    toggles.forEach(function (t, i) {
+      h += '<div class="ctrl-row">' +
+        '<div class="ctrl-icon" style="background:' + t.bg + '">' + icon(t.icon, 22, t.fg) + '</div>' +
+        '<div style="flex:1;min-width:0"><div class="ctrl-label">' + t.label + '</div><div class="ctrl-sub">' + t.sub + '</div></div>' +
+        '<button class="switch" role="switch" data-act="toggle" data-key="' + t.k + '" ' +
+          'aria-checked="' + (S.toggles[t.k] ? 'true' : 'false') + '" aria-label="' + t.label + '"></button>' +
+      '</div>';
+      if (i < toggles.length - 1) h += '<div class="ctrl-divider"></div>';
+    });
+    h += '</div></div><div class="spacer-tab"></div>';
+    return h;
+  }
+
+  function settingsScreen() {
+    var items = [
+      { t: 'Profile', s: 'Manage your email and phone number', i: 'person', c: '#D35400' },
+      { t: 'WiFi Configuration', s: 'Manage saved WiFi networks', i: 'wifi', c: '#2E7D32' },
+      { t: 'Password', s: 'Set or change your sign-in password', i: 'lock', c: '#D35400' },
+      { t: 'Contact Support', s: 'Get help and assistance', i: 'help', c: '#D35400' },
+      { t: 'Reset NijO’s memory', s: 'Erase what NijO remembers about your child', i: 'trash', c: '#ba1a1a' }
+    ];
+    var h = '<div class="safe-top"></div><div class="set-scroll">' +
+      '<div class="set-hdr"><h2>Settings</h2><p>Manage your account and preferences</p></div><div class="menu">';
+    items.forEach(function (it) {
+      h += '<button class="app-btn menu-item" data-act="noop">' +
+        '<div class="menu-icon" style="background:' + it.c + '15">' + icon(it.i, 22, it.c) + '</div>' +
+        '<div class="menu-text"><div class="menu-title" style="' + (it.c === '#ba1a1a' ? 'color:#ba1a1a' : '') + '">' + it.t + '</div>' +
+        '<div class="menu-sub">' + it.s + '</div></div>' +
+        icon('chevR', 18, '#594238') + '</button>';
+    });
+    h += '</div><div class="about-title">About</div><div class="about-card">' +
+      '<div class="about-row"><span class="k">App Version</span><span class="v">1.0.0</span></div>' +
+      '<div class="about-row"><span class="k">Build</span><span class="v">2024.01</span></div>' +
+      '</div></div><div class="spacer-tab"></div>';
+    return h;
+  }
+
+  function alertsScreen() {
+    var n = S.alerts.length;
+    var h = '<div class="safe-top"></div><div class="hdr">' +
+      '<button class="app-btn back-btn" data-act="go" data-to="kid" aria-label="Go back">' + icon('chevL', 20, '#1e1b18', 2.2) + '</button>' +
+      '<div style="flex:1"><div class="hdr-title">Safety Alerts</div>' +
+      '<div class="hdr-sub">' + n + ' alert' + (n !== 1 ? 's' : '') + '</div></div></div>';
+
+    if (n === 0) {
+      h += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;padding:0 40px;gap:12px;text-align:center">' +
+        '<div style="width:80px;height:80px;border-radius:40px;background:rgba(211,84,0,.1);display:flex;align-items:center;justify-content:center;margin-bottom:8px">' +
+        icon('shield', 40, '#D35400') + '</div>' +
+        '<div style="font-family:var(--fh);font-weight:700;font-size:17px;color:var(--on)">No alerts</div>' +
+        '<div style="font-size:13px;line-height:20px;color:var(--on-var)">nijo hasn’t flagged anything. Safety alerts will appear here.</div></div>';
+      return h;
+    }
+
+    h += '<div class="list">';
+    S.alerts.forEach(function (a) {
+      h += '<div class="row-card">' +
+        '<div class="badge-28" style="background:' + sevTint(a.severity) + '">' + icon('warn', 15, sevRaw(a.severity)) + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="pill-row">' +
+            '<div class="sev-pill" style="background:' + sevTint(a.severity) + '"><span style="color:' + sevTextColor(a.severity) + '">' + a.severity + '</span></div>' +
+            '<div class="cat">' + esc(a.category) + '</div>' +
+            '<button class="app-btn" data-act="del-alert" data-id="' + a.id + '" aria-label="Delete ' + a.severity + ' alert about ' + esc(a.category) + '">' +
+              icon('trash', 15, '#594238') + '</button>' +
+          '</div>' +
+          '<div class="snippet">' + esc(a.snippet) + '</div>' +
+          metaRow(a.at) +
+        '</div></div>';
+    });
+    return h + '</div><div class="spacer-40"></div>';
+  }
+
+  function conversationsScreen() {
+    var list = DATA.conversations;
+    var accents = ['#D35400', '#725c00', '#71582c'];
+    var h = '<div class="safe-top"></div><div class="hdr">' +
+      '<button class="app-btn back-btn" data-act="go" data-to="kid" aria-label="Go back">' + icon('chevL', 20, '#1e1b18', 2.2) + '</button>' +
+      '<div style="flex:1"><div class="hdr-title">Recent Conversations</div>' +
+      '<div class="hdr-sub">' + list.length + ' sessions with nijo</div></div></div><div class="list">';
+
+    list.forEach(function (c, i) {
+      var fg = accents[i % accents.length];
+      h += '<div class="row-card">' +
+        '<div class="badge-28" style="background:' + fg + '1A"><span style="font-weight:600;font-size:12px;color:' + fg + '">' + (i + 1) + '</span></div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="snippet">“' + esc(c.summary) + '”</div>' +
+          metaRow(c.at, c.turns) +
+        '</div></div>';
+    });
+    return h + '</div><div class="spacer-40"></div>';
+  }
+
+  function wrapupScreen() {
+    var w = DATA.wrapup;
+
+    // Same derivation the real screen does: seconds is stored, minutes is read.
+    var merged = {};
+    Object.keys(w.numbers).forEach(function (k) { if (k !== 'seconds') merged[k] = w.numbers[k]; });
+    if (w.numbers.seconds) merged.minutes = Math.max(1, Math.round(w.numbers.seconds / 60));
+
+    var keys = NUMBER_ORDER.filter(function (k) { return merged[k]; });
+    Object.keys(merged).forEach(function (k) { if (merged[k] && NUMBER_ORDER.indexOf(k) === -1) keys.push(k); });
+
+    var h = '<div class="cover"><div class="cover-top">' +
+      '<button class="app-btn icon-btn-44" data-act="go" data-to="kid" aria-label="Close weekly wrap-up">' + icon('close', 20, '#594238', 2.2) + '</button></div>' +
+      '<div class="eyebrow">' + C.eyebrow + '</div>' +
+      '<h2 class="cover-title">' + esc(possessive(w.kid_name)) + '<br><em>' + C.titleSuffix + '</em></h2>' +
+      '<div class="cover-dates">' + weekRange(w.week_start) + '</div>' +
+      '<div class="hero-card"><div class="quote-mark" aria-hidden="true">“</div>' +
+        '<div class="quote-label">' + C.hero.quote + '</div>' +
+        '<div class="quote-text">“' + esc(w.hero.text) + '”</div>' +
+      '</div></div>';
+
+    // Numbers
+    h += '<div class="w-section numbers-section"><div class="eyebrow">' + C.numbers.eyebrow + '</div>' +
+      '<h3 class="w-title">' + C.numbers.title + '<em>' + C.numbers.titleAccent + '</em></h3><div class="stat-grid">';
+    keys.forEach(function (k) {
+      var lab = C.numbers.labels[k];
+      var text = lab ? (merged[k] === 1 ? lab.one : lab.many) : k.replace(/_/g, ' ');
+      h += '<div class="stat-card"><div class="stat-n">' + merged[k] + '</div><div class="stat-k">' + esc(text) + '</div></div>';
+    });
+    h += '</div></div>';
+
+    // What's growing
+    h += '<div class="w-section"><div class="eyebrow">' + C.growing.eyebrow + '</div>' +
+      '<h3 class="w-title">' + C.growing.title + '<em>' + C.growing.titleAccent + '</em></h3>';
+    w.growing.forEach(function (g) {
+      h += '<div class="grow-card"><div class="grow-dot"></div><div class="grow-text">' + esc(g) + '</div></div>';
+    });
+    h += '</div>';
+
+    // Worth your attention
+    var a = w.attention;
+    h += '<div class="w-section curio-section"><div class="eyebrow">' + C.attention.eyebrow + '</div>' +
+      '<h3 class="w-title">' + (a.flag ? C.attention.title + '<em>' + C.attention.titleAccent + '</em>'
+                                     : C.attention.clearTitle + '<em>' + C.attention.clearTitleAccent + '</em>') + '</h3>';
+    if (a.flag) {
+      h += '<div class="flag-card"><div class="flag-row">' + icon('alertCir', 18, '#6b5200') +
+        '<span class="flag-cat">' + esc(a.category) + '</span>' +
+        '<div class="flag-pill"><span>' + esc(a.severity) + '</span></div></div>' +
+        '<div class="flag-body">' + C.attention.flagged + '</div></div>';
+    } else {
+      h += '<div class="calm-card">' + icon('shield', 18, '#2E7D32') + '<div class="calm-text">Nothing needed your attention this week.</div></div>';
+    }
+    h += '</div>';
+
+    // Bring it up
+    h += '<div class="w-section"><div class="eyebrow">' + C.bringItUp.eyebrow + '</div>' +
+      '<h3 class="w-title">' + C.bringItUp.title + '<em>' + C.bringItUp.titleAccent + '</em></h3>';
+    w.bring_it_up.forEach(function (b) {
+      h += '<div class="ask-card">' + icon('bubbleDots', 16, '#D35400') + '<div class="ask-text">' + esc(b) + '</div></div>';
+    });
+    h += '<div class="ask-hint">' + C.bringItUp.hint + '</div></div>';
+
+    // Sign-off
+    h += '<div class="w-section closing"><div class="closing-line">' + esc(w.sign_off) + '</div>' +
+      '<button class="app-btn" data-act="go" data-to="conversations"><span class="quiet-link">' + C.conversationsLink + '</span></button></div>' +
+      '<div class="spacer-40"></div>';
+    return h;
+  }
+
+  var RENDERERS = {
+    kid: kidScreen, parent: parentScreen, settings: settingsScreen,
+    alerts: alertsScreen, conversations: conversationsScreen, wrapup: wrapupScreen
+  };
+
+  /* ── Render ──────────────────────────────────────────────────────────────── */
+  var screenEl = document.getElementById('screen');
+  var tabbarEl = document.getElementById('tabbar');
+  var tabbarInner = document.getElementById('tabbar-inner');
+
+  function renderTabs() {
+    var isTab = ['kid', 'parent', 'settings'].indexOf(S.screen) !== -1;
+    tabbarEl.hidden = !isTab;
+    if (!isTab) return;
+    tabbarInner.innerHTML = TABS.map(function (t) {
+      var on = S.screen === t.id;
+      return '<button class="app-btn tab-btn" role="tab" data-act="go" data-to="' + t.id + '" aria-current="' + on + '">' +
+        icon(t.icon, 22, on ? '#D35400' : '#8c7166', on ? 2.1 : 1.9) + '<span>' + t.label + '</span></button>';
+    }).join('');
+  }
+
+  function render(keepScroll) {
+    var top = keepScroll ? screenEl.scrollTop : 0;
+    screenEl.innerHTML = RENDERERS[S.screen]();
+    screenEl.scrollTop = top;
+    renderTabs();
+    bindSliders();
+  }
+
+  /* ── Sliders ─────────────────────────────────────────────────────────────── */
+  function setSlider(key, ratio) {
+    S.sliders[key] = Math.round(Math.max(0, Math.min(1, ratio)) * 10) / 10;
+    var wrap = screenEl.querySelector('[data-slider="' + key + '"]');
+    if (!wrap) return;
+    var pct = Math.round(S.sliders[key] * 100);
+    wrap.querySelector('.fill').style.width = pct + '%';
+    wrap.querySelector('.thumb').style.left = pct + '%';
+    wrap.setAttribute('aria-valuenow', pct);
+    wrap.closest('.slider-card').querySelector('.slider-pct').textContent = pct + '%';
+  }
+
+  function bindSliders() {
+    screenEl.querySelectorAll('[data-slider]').forEach(function (wrap) {
+      var key = wrap.getAttribute('data-slider');
+      var dragging = false;
+
+      function fromEvent(e) {
+        var r = wrap.getBoundingClientRect();
+        setSlider(key, (e.clientX - r.left) / r.width);
+      }
+      wrap.addEventListener('pointerdown', function (e) {
+        dragging = true; wrap.setPointerCapture(e.pointerId); fromEvent(e); e.preventDefault();
+      });
+      wrap.addEventListener('pointermove', function (e) { if (dragging) fromEvent(e); });
+      wrap.addEventListener('pointerup', function () { dragging = false; });
+      wrap.addEventListener('pointercancel', function () { dragging = false; });
+      wrap.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { setSlider(key, S.sliders[key] - 0.1); e.preventDefault(); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { setSlider(key, S.sliders[key] + 0.1); e.preventDefault(); }
+      });
+    });
+  }
+
+  /* ── Events ──────────────────────────────────────────────────────────────── */
+  function addTag(which) {
+    var input = document.getElementById(which === 'interests' ? 'add-interest' : 'add-topic');
+    if (!input) return;
+    var v = input.value.trim();
+    if (!v) return;
+    (which === 'interests' ? S.interests : S.topics).push(v);
+    render(true);
+    var next = document.getElementById(which === 'interests' ? 'add-interest' : 'add-topic');
+    if (next) next.focus();
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+
+    if (act === 'go') {
+      S.screen = el.getAttribute('data-to');
+      render(false);
+      return;
+    }
+    if (act === 'dismiss-banner') { S.bannerDismissed = true; render(true); return; }
+    if (act === 'toggle-edit') {
+      var w = el.getAttribute('data-which');
+      if (w === 'interests') S.editingInterests = !S.editingInterests;
+      else S.editingTopics = !S.editingTopics;
+      render(true);
+      return;
+    }
+    if (act === 'del-interest') {
+      var vi = el.getAttribute('data-val');
+      S.interests = S.interests.filter(function (x) { return x !== vi; });
+      render(true); return;
+    }
+    if (act === 'del-topic') {
+      var vt = el.getAttribute('data-val');
+      S.topics = S.topics.filter(function (x) { return x !== vt; });
+      render(true); return;
+    }
+    if (act === 'add-interest') { addTag('interests'); return; }
+    if (act === 'add-topic') { addTag('topics'); return; }
+    if (act === 'toggle') {
+      var k = el.getAttribute('data-key');
+      S.toggles[k] = !S.toggles[k];
+      el.setAttribute('aria-checked', S.toggles[k] ? 'true' : 'false');
+      return;
+    }
+    if (act === 'del-alert') {
+      var id = Number(el.getAttribute('data-id'));
+      S.alerts = S.alerts.filter(function (a) { return a.id !== id; });
+      render(true); return;
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    if (e.target.id === 'add-interest') { addTag('interests'); e.preventDefault(); }
+    if (e.target.id === 'add-topic') { addTag('topics'); e.preventDefault(); }
+  });
+
+  render(false);
+})();
+</script>
